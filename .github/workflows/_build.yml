@@ -55,7 +55,26 @@ jobs:
           arch: x64
 
       - name: Build
+        env:
+          # The Windows runner also has MinGW's gcc on PATH, which CMake would otherwise pick.
+          CC: ${{ runner.os == 'Windows' && 'cl' || '' }}
+          CXX: ${{ runner.os == 'Windows' && 'cl' || '' }}
         run: gizmo/build.sh "$RUNNER_TEMP/$ARCHIVE" ${{ matrix.cmake-args }}
+
+      - name: Check the libraries
+        run: |
+          cd "$RUNNER_TEMP/$ARCHIVE/lib"
+          # Every library in lib/ must be in the link list, and every name in the list must exist,
+          # as the opencv crate resolves it: it drops a leading "lib" from a name except for MSVC.
+          listed=$(tr ',' '\n' < ../link-libs.txt | sed 's/^static=//')
+          if [ "$RUNNER_OS" = Windows ]; then
+            present=$(ls *.lib | sed 's/\.lib$//')
+          else
+            listed=$(echo "$listed" | sed 's/^lib//')
+            present=$(ls *.a | sed 's/^lib//; s/\.a$//')
+          fi
+          listed=$(echo "$listed" | sort); present=$(echo "$present" | sort)
+          diff <(echo "$listed") <(echo "$present")
 
       - name: Package
         run: |

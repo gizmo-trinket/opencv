@@ -5,7 +5,8 @@
 #
 # Only the modules the calibration needs: fisheye calibration (calib) and ChArUco detection
 # (objdetect), plus what they depend on, and PNG/JPEG codecs. Nothing is downloaded at configure
-# time: IPP, KleidiCV, ITT, OpenCL, LAPACK, Eigen and every optional codec are off.
+# time or adds a platform-only library: IPP, KleidiCV, Carotene, ITT, OpenCL, LAPACK, Eigen and every
+# optional codec are off.
 #
 # The install has the same layout on every platform, so one set of `opencv` crate variables works
 # everywhere: headers in include/, every static library (OpenCV's and the bundled zlib, libpng and
@@ -44,7 +45,7 @@ cmake -S "$src" -B "$build" "${generator[@]}" \
 	-DWITH_PNG=ON -DWITH_JPEG=ON -DWITH_SPNG=OFF \
 	-DWITH_TIFF=OFF -DWITH_WEBP=OFF -DWITH_AVIF=OFF -DWITH_JPEGXL=OFF -DWITH_OPENJPEG=OFF \
 	-DWITH_JASPER=OFF -DWITH_OPENEXR=OFF -DWITH_IMGCODEC_GIF=OFF -DWITH_GDAL=OFF -DWITH_GDCM=OFF \
-	-DWITH_IPP=OFF -DWITH_KLEIDICV=OFF -DWITH_ITT=OFF -DWITH_OPENCL=OFF -DWITH_LAPACK=OFF \
+	-DWITH_IPP=OFF -DWITH_KLEIDICV=OFF -DWITH_CAROTENE=OFF -DWITH_ITT=OFF -DWITH_OPENCL=OFF -DWITH_LAPACK=OFF \
 	-DWITH_EIGEN=OFF -DWITH_TBB=OFF -DWITH_OPENMP=OFF -DWITH_PROTOBUF=OFF -DWITH_FLATBUFFERS=OFF \
 	-DWITH_OPENVINO=OFF -DWITH_FFMPEG=OFF -DWITH_GSTREAMER=OFF -DWITH_GTK=OFF -DWITH_QT=OFF \
 	-DWITH_V4L=OFF -DWITH_1394=OFF -DWITH_VA=OFF -DWITH_VA_INTEL=OFF -DWITH_OBSENSOR=OFF \
