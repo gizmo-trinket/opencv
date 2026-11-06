@@ -56,9 +56,11 @@ jobs:
 
       - name: Build
         env:
-          # The Windows runner also has MinGW's gcc on PATH, which CMake would otherwise pick.
+          # The Windows runner also has MinGW on PATH. If CMake picks any GNU tool, even only as the
+          # assembler, it names every library lib*.a instead of *.lib, so make everything MSVC.
           CC: ${{ runner.os == 'Windows' && 'cl' || '' }}
           CXX: ${{ runner.os == 'Windows' && 'cl' || '' }}
+          ASM: ${{ runner.os == 'Windows' && 'cl' || '' }}
         run: gizmo/build.sh "$RUNNER_TEMP/$ARCHIVE" ${{ matrix.cmake-args }}
 
       - name: Check the libraries
