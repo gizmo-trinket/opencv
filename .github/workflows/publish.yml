@@ -1,0 +1,50 @@
+name: Publish
+
+# A tag opencv/v<version> builds every platform and publishes the archives, with their SHA-256
+# files, as a GitHub release. The repository is public, so downloads need no token.
+
+on:
+  push:
+    tags: ['opencv/v*']
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      semver: ${{ steps.v.outputs.semver }}
+    steps:
+      - id: v
+        run: echo "semver=${GITHUB_REF_NAME#opencv/v}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    uses: ./.github/workflows/_build.yml
+    with:
+      version: ${{ needs.version.outputs.semver }}
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download archives
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: build-*
+          merge-multiple: true
+          path: dist
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SEMVER: ${{ needs.version.outputs.semver }}
+        run: |
+          cat dist/*.sha256 > dist/SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "OpenCV $SEMVER (minimal static build)" \
+            --notes "Static OpenCV $SEMVER for the Oracle desktop app, built by gizmo/build.sh at ${GITHUB_SHA::7}: core, flann, geometry, imgproc, features, objdetect, stereo, calib and imgcodecs (PNG, JPEG). See gizmo/README.md for how to link it from Rust."

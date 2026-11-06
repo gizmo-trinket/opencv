@@ -1,0 +1,76 @@
+name: _Build
+
+# Builds the minimal static OpenCV (gizmo/build.sh) for every platform the Oracle desktop app ships
+# on, and uploads one archive per platform.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+        description: 'Version in the archive names, e.g. 5.0.0'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: macos-15
+            target: aarch64-apple-darwin
+            # Rust's own minimum for aarch64-apple-darwin.
+            cmake-args: -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+    defaults:
+      run:
+        shell: bash
+    env:
+      ARCHIVE: opencv-${{ inputs.version }}-${{ matrix.target }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Ninja (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ninja-build
+
+      - name: Install Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ninja
+
+      - name: MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+
+      - name: Build
+        run: gizmo/build.sh "$RUNNER_TEMP/$ARCHIVE" ${{ matrix.cmake-args }}
+
+      - name: Package
+        run: |
+          cd "$RUNNER_TEMP"
+          rm -rf "$ARCHIVE/bin" "$ARCHIVE/share" "$ARCHIVE/etc"
+          tar -czf "$ARCHIVE.tar.gz" "$ARCHIVE"
+          if command -v sha256sum >/dev/null; then sha256sum "$ARCHIVE.tar.gz"; else shasum -a 256 "$ARCHIVE.tar.gz"; fi > "$ARCHIVE.tar.gz.sha256"
+          cat "$ARCHIVE.tar.gz.sha256"
+          ls -la "$ARCHIVE.tar.gz"
+
+      - name: Upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: build-${{ matrix.os }}-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/${{ env.ARCHIVE }}.tar.gz
+            ${{ runner.temp }}/${{ env.ARCHIVE }}.tar.gz.sha256
+          if-no-files-found: error

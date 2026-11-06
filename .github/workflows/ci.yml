@@ -1,0 +1,20 @@
+name: CI
+
+# Checks the build on every platform after a change to gizmo/5.0.0 is merged, or on demand.
+# Nothing is published: releases come from tags (publish.yml).
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [gizmo/5.0.0]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    uses: ./.github/workflows/_build.yml
+    with:
+      version: 5.0.0
