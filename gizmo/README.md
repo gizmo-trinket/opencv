@@ -15,7 +15,11 @@ OpenCV source is changed.
 | `objdetect` | `CharucoDetector`, ArUco dictionaries |
 | `geometry`, `imgproc` | fisheye projection and undistortion, `solvePnP`, `Rodrigues`, `remap` |
 | `features`, `flann`, `stereo`, `core` | what `calib` and `objdetect` depend on |
-| `imgcodecs` | PNG and JPEG, with bundled zlib, libpng and libjpeg-turbo |
+
+There are **no image codecs** (`imgcodecs`): the app decodes photos in Rust. A bundled libjpeg-turbo
+or libpng would export the same symbols as the ones other crates link statically (nokhwa's mozjpeg,
+which decodes the camera's MJPEG stream), and the link would fail. zlib is bundled because core
+needs it.
 
 Everything else is off, including every optional dependency that would be downloaded at configure
 time (IPP, KleidiCV, ITT) or found on the build machine (OpenCL, LAPACK, Eigen, TBB, other codecs),
@@ -34,7 +38,7 @@ Each archive has the same layout:
 
 ```
 include/opencv2/...
-lib/            every static library, OpenCV's and the bundled codecs'
+lib/            every static library, OpenCV's and the bundled zlib
 link-libs.txt   the value for OPENCV_LINK_LIBS
 LICENSE
 ```
@@ -58,6 +62,15 @@ Push a tag `opencv/v<version>` on this branch. `publish.yml` builds all three pl
 a GitHub release with the archives, a `.sha256` for each, and `SHA256SUMS`. The repository is
 public, so the downloads need no token. `ci.yml` runs the same build on demand (Actions → CI → Run
 workflow) or after a pull request into the branch is merged, without publishing.
+
+A rebuild of the same upstream version with different options gets a build number as semver build
+metadata: `opencv/v5.0.0+r2`, `+r3`, … Earlier tags and their releases stay, so anything pinned to
+them keeps working.
+
+| Tag | What changed |
+|---|---|
+| `opencv/v5.0.0` | First build, with `imgcodecs` (PNG, JPEG) |
+| `opencv/v5.0.0+r2` | `imgcodecs` and its bundled libjpeg-turbo and libpng removed: they clashed with nokhwa's mozjpeg |
 
 For a new upstream release, branch `gizmo/<new version>` from upstream's tag, copy `gizmo/` and
 `.github/workflows/` over, and drop upstream's own workflows.
