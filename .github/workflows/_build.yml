@@ -1,7 +1,7 @@
 name: _Build
 
 # Builds the minimal static OpenCV (gizmo/build.sh) for every platform the Oracle desktop app ships
-# on, and uploads one archive per platform.
+# on, and for the training worker's (arm64 Linux), and uploads one archive per platform.
 
 on:
   workflow_call:
@@ -24,6 +24,9 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
+          # The training worker (data-validation-service), which runs on Graviton.
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
           - os: macos-15
             target: aarch64-apple-darwin
             # Rust's own minimum for aarch64-apple-darwin.

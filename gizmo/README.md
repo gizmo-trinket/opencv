@@ -1,7 +1,9 @@
 # Gizmo & Trinket OpenCV build
 
 A minimal, static build of upstream OpenCV for the Oracle desktop app, which links it through
-[oracle-calibration](https://github.com/gizmo-trinket/oracle-calibration). The branch
+[oracle-calibration](https://github.com/gizmo-trinket/oracle-calibration), and for the training
+worker ([data-validation-service](https://github.com/gizmo-trinket/data-validation-service)), which
+uses only `remap`. The branch
 `gizmo/<version>` is upstream's release tag plus only this directory and `.github/workflows`: no
 OpenCV source is changed.
 
@@ -31,8 +33,12 @@ CRT (`/MD`), as Rust does.
 | Archive | Runner |
 |---|---|
 | `opencv-<version>-x86_64-unknown-linux-gnu.tar.gz` | `ubuntu-24.04` |
+| `opencv-<version>-aarch64-unknown-linux-gnu.tar.gz` | `ubuntu-24.04-arm`, for the training worker |
 | `opencv-<version>-aarch64-apple-darwin.tar.gz` | `macos-15`, macOS 11.0 or later |
 | `opencv-<version>-x86_64-pc-windows-msvc.tar.gz` | `windows-2025`, MSVC |
+
+The Linux archives link only against a C and C++ runtime at least as new as Ubuntu 24.04's (glibc
+2.39, GCC 13): Debian 13, not Debian 12.
 
 Each archive has the same layout:
 
@@ -58,7 +64,7 @@ downloads the right archive, checks its SHA-256, and sets these through `.cargo/
 
 ## Releasing
 
-Push a tag `opencv/v<version>` on this branch. `publish.yml` builds all three platforms and creates
+Push a tag `opencv/v<version>` on this branch. `publish.yml` builds every platform and creates
 a GitHub release with the archives, a `.sha256` for each, and `SHA256SUMS`. The repository is
 public, so the downloads need no token. `ci.yml` runs the same build on demand (Actions → CI → Run
 workflow) or after a pull request into the branch is merged, without publishing.
@@ -71,6 +77,7 @@ them keeps working.
 |---|---|
 | `opencv/v5.0.0` | First build, with `imgcodecs` (PNG, JPEG) |
 | `opencv/v5.0.0+r2` | `imgcodecs` and its bundled libjpeg-turbo and libpng removed: they clashed with nokhwa's mozjpeg |
+| `opencv/v5.0.0+r3` | Adds arm64 Linux, for the training worker. Same options |
 
 For a new upstream release, branch `gizmo/<new version>` from upstream's tag, copy `gizmo/` and
 `.github/workflows/` over, and drop upstream's own workflows.
